@@ -1,4 +1,5 @@
 import { type Keyword } from "@shared/schema";
+import { detectSections, type TextSection } from "./text-analysis";
 
 export function parseKeywords(input: string): Keyword[] {
   if (!input.trim()) return [];
@@ -41,7 +42,28 @@ export function validateApiKey(key: string): boolean {
   return key.startsWith('sk-') && key.length > 10;
 }
 
+// New intelligent chunking function
+export function intelligentChunkText(text: string): Array<{text: string, startIndex: number, endIndex: number, title: string}> {
+  const sections = detectSections(text);
+  
+  return sections.map(section => ({
+    text: section.content,
+    startIndex: section.startIndex,
+    endIndex: section.endIndex,
+    title: section.title
+  }));
+}
+
+// Keep original function for backward compatibility
 export function chunkText(text: string, chunkSize: number = 500, overlap: number = 100): string[] {
+  const sections = detectSections(text);
+  
+  // If we have good sections, use them
+  if (sections.length > 1 && sections[0].type !== 'chunk') {
+    return sections.map(s => s.content);
+  }
+  
+  // Otherwise fall back to word-based chunking
   const words = text.split(/\s+/);
   const chunks: string[] = [];
   

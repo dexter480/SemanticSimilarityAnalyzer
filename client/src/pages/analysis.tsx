@@ -8,15 +8,32 @@ import { Button } from "@/components/ui/button";
 export default function AnalysisPage() {
   const [results, setResults] = useState<AnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [originalText, setOriginalText] = useState("");
+  const [competitorText, setCompetitorText] = useState("");
+  const [apiKey, setApiKey] = useState("");
 
-  const handleAnalysisComplete = (analysisResults: AnalysisResult) => {
+  const handleAnalysisComplete = (analysisResults: AnalysisResult, originalMainCopy: string, userApiKey: string, competitorCopy?: string) => {
     setResults(analysisResults);
     setIsAnalyzing(false);
+    setOriginalText(originalMainCopy);
+    setApiKey(userApiKey);
+    if (competitorCopy) setCompetitorText(competitorCopy);
+    
+    // Also retrieve stored data as backup
+    const storedText = sessionStorage.getItem('originalMainCopy');
+    const storedCompetitorText = sessionStorage.getItem('competitorCopy');
+    const storedApiKey = sessionStorage.getItem('apiKey');
+    if (storedText) setOriginalText(storedText);
+    if (storedCompetitorText) setCompetitorText(storedCompetitorText);
+    if (storedApiKey) setApiKey(storedApiKey);
   };
 
   const handleReset = () => {
     setResults(null);
     setIsAnalyzing(false);
+    setOriginalText("");
+    setCompetitorText("");
+    setApiKey("");
     // Reset form would be handled by the form component
   };
 
@@ -55,7 +72,12 @@ export default function AnalysisPage() {
         />
         
         {results && (
-          <ResultsDisplay results={results} />
+          <ResultsDisplay 
+            results={results} 
+            originalText={originalText}
+            competitorText={competitorText}
+            apiKey={apiKey}
+          />
         )}
       </main>
 

@@ -17,7 +17,7 @@ import { Eye, EyeOff, Shield, Brain, HelpCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface AnalysisFormProps {
-  onAnalysisComplete: (results: AnalysisResult) => void;
+  onAnalysisComplete: (results: AnalysisResult, originalText: string, apiKey: string, competitorText?: string) => void;
   isAnalyzing: boolean;
   setIsAnalyzing: (analyzing: boolean) => void;
 }
@@ -45,8 +45,8 @@ export function AnalysisForm({ onAnalysisComplete, isAnalyzing, setIsAnalyzing }
       const response = await apiRequest("POST", "/api/analyze", data);
       return response.json() as Promise<AnalysisResult>;
     },
-    onSuccess: (results) => {
-      onAnalysisComplete(results);
+    onSuccess: (results, variables) => {
+      onAnalysisComplete(results, variables.mainCopy, variables.apiKey, variables.competitorCopy);
       toast({
         title: "Analysis Complete",
         description: `Processing completed in ${(results.processingTime / 1000).toFixed(1)} seconds`,
@@ -70,6 +70,11 @@ export function AnalysisForm({ onAnalysisComplete, isAnalyzing, setIsAnalyzing }
       ...data,
       keywords: parsedKeywords
     });
+    
+    // Store the data for later use
+    sessionStorage.setItem('originalMainCopy', data.mainCopy);
+    sessionStorage.setItem('competitorCopy', data.competitorCopy);
+    sessionStorage.setItem('apiKey', data.apiKey);
   };
 
   const handleKeywordsChange = (value: string) => {
@@ -236,7 +241,7 @@ export function AnalysisForm({ onAnalysisComplete, isAnalyzing, setIsAnalyzing }
                   </div>
                 </RadioGroup>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Chunked mode splits text into ~500-word sections for detailed analysis
+                  Full mode analyzes the entire document. Chunked mode splits text into ~500-word sections for detailed analysis.
                 </p>
               </div>
 

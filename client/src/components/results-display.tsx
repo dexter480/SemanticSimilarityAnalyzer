@@ -1,17 +1,41 @@
+import { useState } from "react";
 import { type AnalysisResult } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, CheckCircle, Lightbulb, TrendingUp, ThumbsUp, FileText, Download } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Trophy, CheckCircle, Lightbulb, TrendingUp, ThumbsUp, FileText, Download, Brain, AlertTriangle } from "lucide-react";
+import { AIEnhancement } from "@/components/ai-enhancement";
+import { TextEvidence } from "@/components/text-evidence";
+import { useToast } from "@/hooks/use-toast";
 
 interface ResultsDisplayProps {
   results: AnalysisResult;
+  originalText: string;
+  competitorText: string;
+  apiKey: string;
 }
 
-export function ResultsDisplay({ results }: ResultsDisplayProps) {
+export function ResultsDisplay({ results, originalText, competitorText, apiKey }: ResultsDisplayProps) {
   const isMainWinner = results.mainCopyScore > results.competitorCopyScore;
   const gap = Math.abs(results.mainCopyScore - results.competitorCopyScore);
+  const [showEnhancement, setShowEnhancement] = useState(false);
+  const [enhancedContent, setEnhancedContent] = useState("");
+  const { toast } = useToast();
+
+  const handleAIEnhancement = () => {
+    setShowEnhancement(true);
+  };
+
+  const handleAcceptEnhancement = (enhanced: string) => {
+    setEnhancedContent(enhanced);
+    setShowEnhancement(false);
+    toast({
+      title: "Content Enhanced",
+      description: "Your content has been updated with AI suggestions",
+    });
+  };
 
   const exportCSV = () => {
     const csvData = [
@@ -178,11 +202,11 @@ Processing Time: ${(results.processingTime / 1000).toFixed(1)} seconds
         </CardContent>
       </Card>
 
-      {/* Chunked Analysis Results */}
+      {/* Detailed Analysis Results */}
       {results.mainCopyChunks && results.competitorCopyChunks && (
         <Card>
           <CardHeader>
-            <CardTitle>Detailed Chunk Analysis</CardTitle>
+            <CardTitle>Detailed Content Analysis</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -258,7 +282,7 @@ Processing Time: ${(results.processingTime / 1000).toFixed(1)} seconds
                         <h3 className="text-sm font-medium text-yellow-800">Content Improvement Opportunity</h3>
                         <div className="mt-2 text-sm text-yellow-700">
                           <p>
-                            Some chunks scored below 60%. Consider increasing keyword density and semantic relevance in these sections.
+                            Some sections scored below 60%. Consider increasing keyword density and semantic relevance in these areas.
                           </p>
                         </div>
                       </div>
@@ -307,6 +331,125 @@ Processing Time: ${(results.processingTime / 1000).toFixed(1)} seconds
         </CardContent>
       </Card>
 
+      {/* Keyword Performance Analysis with Evidence */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Keyword Performance Analysis
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {results.keywordAnalysis.map((keyword) => (
+              <TextEvidence
+                key={keyword.keyword}
+                keyword={keyword}
+                userText={originalText}
+                competitorText={competitorText}
+                chunks={results.mainCopyChunks}
+              />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Section Improvements */}
+      {results.sectionImprovements && results.sectionImprovements.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Section-by-Section Improvements
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {results.sectionImprovements.map((section, index) => (
+                <div key={index} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium">{section.section}</h4>
+                    <Badge variant={section.currentScore < 60 ? "destructive" : "secondary"}>
+                      Score: {section.currentScore}%
+                    </Badge>
+                  </div>
+                  
+                  {section.missingKeywords.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-sm text-muted-foreground mb-1">Missing keywords:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {section.missingKeywords.map((keyword) => (
+                          <Badge key={keyword} variant="outline" className="text-xs">
+                            {keyword}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {section.suggestedPhrases.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-sm text-muted-foreground mb-1">Suggested additions:</p>
+                      <ul className="list-disc list-inside text-sm space-y-1">
+                        {section.suggestedPhrases.map((phrase, i) => (
+                          <li key={i} className="text-primary">{phrase}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {section.competitorStrengths.length > 0 && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Competitor strengths:</p>
+                      <ul className="list-disc list-inside text-sm space-y-1">
+                        {section.competitorStrengths.map((strength, i) => (
+                          <li key={i} className="text-muted-foreground">{strength}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* AI Enhancement */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="h-5 w-5" />
+            AI-Powered Content Enhancement
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert className="mb-4">
+            <Lightbulb className="h-4 w-4" />
+            <AlertDescription>
+              Let AI enhance your content based on the analysis above. Your original text will be preserved,
+              and all changes will be clearly highlighted for your review.
+            </AlertDescription>
+          </Alert>
+          
+          <Button 
+            onClick={handleAIEnhancement}
+            className="w-full"
+            size="lg"
+            disabled={!results.sectionImprovements || results.sectionImprovements.length === 0}
+          >
+            <Brain className="h-5 w-5 mr-2" />
+            Add Suggestions Using AI
+          </Button>
+          
+          {(!results.sectionImprovements || results.sectionImprovements.length === 0) && (
+            <p className="text-sm text-muted-foreground mt-2 text-center">
+              No improvement suggestions available for this analysis
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Export Options */}
       <Card>
         <CardHeader>
@@ -325,6 +468,17 @@ Processing Time: ${(results.processingTime / 1000).toFixed(1)} seconds
           </div>
         </CardContent>
       </Card>
+
+      {/* AI Enhancement Dialog */}
+      {showEnhancement && (
+        <AIEnhancement
+          originalText={originalText}
+          improvements={results.sectionImprovements || []}
+          apiKey={apiKey}
+          onAccept={handleAcceptEnhancement}
+          onCancel={() => setShowEnhancement(false)}
+        />
+      )}
     </div>
   );
 }

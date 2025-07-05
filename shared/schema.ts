@@ -23,6 +23,28 @@ export const chunkResultSchema = z.object({
   text: z.string()
 });
 
+// Add new schemas for enhanced analysis
+export const keywordCoverageSchema = z.object({
+  keyword: z.string(),
+  weight: z.number(),
+  directMentions: z.number(),
+  semanticCoverage: z.number(), // 0-100%
+  strongSections: z.array(z.string()),
+  weakSections: z.array(z.string()),
+  relatedTermsFound: z.array(z.string()),
+  competitorAdvantage: z.boolean(),
+  competitorMentions: z.number()
+});
+
+export const sectionImprovementSchema = z.object({
+  section: z.string(),
+  currentScore: z.number(),
+  missingKeywords: z.array(z.string()),
+  suggestedPhrases: z.array(z.string()),
+  competitorStrengths: z.array(z.string())
+});
+
+// Update the existing analysisResultSchema to include new fields
 export const analysisResultSchema = z.object({
   mainCopyScore: z.number(),
   competitorCopyScore: z.number(),
@@ -30,10 +52,17 @@ export const analysisResultSchema = z.object({
   mainCopyChunks: z.array(chunkResultSchema).optional(),
   competitorCopyChunks: z.array(chunkResultSchema).optional(),
   keywordWeights: z.array(keywordSchema),
-  processingTime: z.number()
+  processingTime: z.number(),
+  // Add new fields for enhanced analysis
+  keywordAnalysis: z.array(keywordCoverageSchema),
+  sectionImprovements: z.array(sectionImprovementSchema)
 });
 
 export type Keyword = z.infer<typeof keywordSchema>;
 export type AnalysisRequest = z.infer<typeof analysisRequestSchema>;
 export type ChunkResult = z.infer<typeof chunkResultSchema>;
 export type AnalysisResult = z.infer<typeof analysisResultSchema>;
+
+// Export new types
+export type KeywordCoverage = z.infer<typeof keywordCoverageSchema>;
+export type SectionImprovement = z.infer<typeof sectionImprovementSchema>;
