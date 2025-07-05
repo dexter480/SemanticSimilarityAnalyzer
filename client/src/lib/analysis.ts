@@ -1,4 +1,4 @@
-import { type Keyword } from "@shared/schema";
+import { type Keyword, type KeywordCoverage } from "@shared/schema";
 import { detectSections, type TextSection } from "./text-analysis";
 
 export function parseKeywords(input: string): Keyword[] {
@@ -93,4 +93,66 @@ export function cosineSimilarity(a: number[], b: number[]): number {
   }
   
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
+// --- Score Prediction Utilities ---
+
+export interface ScorePrediction {
+  keyword: string;
+  currentMentions: number;
+  suggestedMentions: number;
+  currentScore: number;
+  predictedScore: number;
+  impact: number;
+}
+
+export function calculateScorePredictions(
+  currentScore: number,
+  keywordAnalysis: KeywordCoverage[],
+  competitorAnalysis?: KeywordCoverage[]
+): ScorePrediction[] {
+  const predictions: ScorePrediction[] = [];
+
+  keywordAnalysis.forEach((ka) => {
+    // Only predict for keywords needing improvement
+    if (ka.directMentions === 0 || ka.semanticCoverage < 60) {
+      // Determine competitor usage if provided
+      const competitorData = competitorAnalysis?.find((c) => c.keyword === ka.keyword);
+      const targetMentions = competitorData
+        ? Math.max(3, Math.ceil(competitorData.directMentions * 0.8))
+        : 3;
+
+      // Compute impact based on missing coverage and weight
+      const missingCoverage = 100 - ka.semanticCoverage;
+      const weightMultiplier = ka.weight;
+      const baseImpact = (missingCoverage / 100) * 10; // Max 10% per keyword
+      const impact = Math.round(baseImpact * weightMultiplier * 10) / 10;
+
+      predictions.push({
+        keyword: ka.keyword,
+        currentMentions: ka.directMentions,
+        suggestedMentions: targetMentions,
+        currentScore,
+        predictedScore: Math.min(100, currentScore + impact),
+        impact,
+      });
+    }
+  });
+
+  // Return top 5 highest-impact keywords
+  return predictions.sort((a, b) => b.impact - a.impact).slice(0, 5);
+}
+
+export function calculateCumulativeImpact(predictions: ScorePrediction[]): number {
+  if (predictions.length === 0) return 0;
+
+  let cumulativeScore = predictions[0].currentScore;
+  let diminishingFactor = 1;
+
+  predictions.forEach((pred) => {
+    cumulativeScore += pred.impact * diminishingFactor;
+    diminishingFactor *= 0.8; // Diminishing returns
+  });
+
+  return Math.min(100, Math.round(cumulativeScore * 10) / 10);
 }
