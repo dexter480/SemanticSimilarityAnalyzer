@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { type AnalysisResult } from "@shared/schema";
+import { openAIClient } from "@/services/openai-client.service";
+import { SecureSessionStorage } from "@/lib/security";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,8 +30,30 @@ export function ResultsDisplay({ results, originalText, competitorText, apiKey }
   const [showCalculation, setShowCalculation] = useState(false);
   const { toast } = useToast();
 
-  const handleAIEnhancement = () => {
-    setShowEnhancement(true);
+  const handleAIEnhancement = async () => {
+    try {
+      // Get API key from secure storage or props
+      const storedKey = SecureSessionStorage.getItem('temp_api_key') || apiKey;
+      
+      if (!storedKey) {
+        toast({
+          title: "API Key Required",
+          description: "Please provide your API key to use AI enhancement",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Initialize client and enhance
+      openAIClient.initialize(storedKey);
+      setShowEnhancement(true);
+    } catch (error: any) {
+      toast({
+        title: "Enhancement Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   const handleAcceptEnhancement = (enhanced: string) => {
@@ -135,68 +159,70 @@ Processing Time: ${(results.processingTime / 1000).toFixed(1)} seconds
         <CardContent>
           {/* Overall Scores */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {/* Your Content Score */}
             <div className="text-center">
               <h3 className="text-sm font-medium text-muted-foreground mb-2">Your Content</h3>
-              <div className="relative w-24 h-24 mx-auto mb-2">
-                <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 36 36">
-                  <path 
-                    className="text-muted" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    fill="none" 
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                  />
-                  <path 
-                    className="text-primary" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    fill="none" 
-                    strokeDasharray={`${results.mainCopyScore}, 100`}
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xl font-bold">{results.mainCopyScore}%</span>
+              <div className="relative group">
+                <div className="absolute inset-0 gradient-bg rounded-full blur-xl opacity-30 group-hover:opacity-50 transition-opacity" />
+                <div className="relative w-32 h-32 mx-auto">
+                  <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-200" />
+                    <circle cx="18" cy="18" r="16" fill="none" stroke="url(#gradientMain)" strokeWidth="2" strokeDasharray={`${results.mainCopyScore}, 100`} className="transition-all duration-1000 ease-out" />
+                    <defs>
+                      <linearGradient id="gradientMain">
+                        <stop offset="0%" stopColor="var(--gradient-start)" />
+                        <stop offset="100%" stopColor="var(--gradient-end)" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <span className="text-3xl font-bold gradient-text">{results.mainCopyScore}%</span>
+                      <span className="block text-xs text-gray-500 mt-1">Match</span>
+                    </div>
+                  </div>
                 </div>
+                {isMainWinner && (
+                  <div className="absolute -top-2 -right-2 animate-bounce">
+                    <div className="gradient-bg p-2 rounded-full shadow-lg">
+                      <Trophy className="h-4 w-4 text-white" />
+                    </div>
+                  </div>
+                )}
               </div>
-              {isMainWinner && (
-                <Badge className="bg-primary/10 text-primary hover:bg-primary/20">
-                  <Trophy className="h-3 w-3 mr-1" />
-                  Winner
-                </Badge>
-              )}
             </div>
-            
+
+            {/* Competitor Content Score */}
             <div className="text-center">
               <h3 className="text-sm font-medium text-muted-foreground mb-2">Competitor Content</h3>
-              <div className="relative w-24 h-24 mx-auto mb-2">
-                <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 36 36">
-                  <path 
-                    className="text-muted" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    fill="none" 
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                  />
-                  <path 
-                    className="text-muted-foreground" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    fill="none" 
-                    strokeDasharray={`${results.competitorCopyScore}, 100`}
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xl font-bold">{results.competitorCopyScore}%</span>
+              <div className="relative group">
+                <div className="absolute inset-0 gradient-bg rounded-full blur-xl opacity-30 group-hover:opacity-50 transition-opacity" />
+                <div className="relative w-32 h-32 mx-auto">
+                  <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-200" />
+                    <circle cx="18" cy="18" r="16" fill="none" stroke="url(#gradientComp)" strokeWidth="2" strokeDasharray={`${results.competitorCopyScore}, 100`} className="transition-all duration-1000 ease-out" />
+                    <defs>
+                      <linearGradient id="gradientComp">
+                        <stop offset="0%" stopColor="var(--gradient-start)" />
+                        <stop offset="100%" stopColor="var(--gradient-end)" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <span className="text-3xl font-bold gradient-text">{results.competitorCopyScore}%</span>
+                      <span className="block text-xs text-gray-500 mt-1">Match</span>
+                    </div>
+                  </div>
                 </div>
+                {!isMainWinner && (
+                  <div className="absolute -top-2 -right-2 animate-bounce">
+                    <div className="gradient-bg p-2 rounded-full shadow-lg">
+                      <Trophy className="h-4 w-4 text-white" />
+                    </div>
+                  </div>
+                )}
               </div>
-              {!isMainWinner && (
-                <Badge className="bg-primary/10 text-primary hover:bg-primary/20">
-                  <Trophy className="h-3 w-3 mr-1" />
-                  Winner
-                </Badge>
-              )}
             </div>
           </div>
 
