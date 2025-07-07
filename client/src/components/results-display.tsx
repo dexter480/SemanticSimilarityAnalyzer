@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { type AnalysisResult } from "@shared/schema";
 import { openAIClient } from "@/services/openai-client.service";
-import { SecureSessionStorage } from "@/lib/security";
+import { ObfuscatedStorage } from "@/lib/security";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,7 @@ export function ResultsDisplay({ results, originalText, competitorText, apiKey }
   const handleAIEnhancement = async () => {
     try {
       // Get API key from secure storage or props
-      const storedKey = SecureSessionStorage.getItem('temp_api_key') || apiKey;
+      const storedKey = ObfuscatedStorage.getItem('temp_api_key') || apiKey;
       
       if (!storedKey) {
         toast({
@@ -134,8 +134,8 @@ Competitor Content Breakdown:
 ${results.competitorCopyChunks?.map((chunk, i) => `Chunk ${i + 1}: ${chunk.score}%`).join('\n') || ''}
 ` : ''}
 
-KEYWORD WEIGHTS
-${results.keywordWeights.map(k => `${k.text}: ${k.weight}`).join('\n')}
+TOPIC PRIORITIES
+${results.keywordWeights.map(k => `${k.text}: ${k.weight > 1 ? 'Main Topic' : 'Supporting Topic'}`).join('\n')}
 
 Processing Time: ${(results.processingTime / 1000).toFixed(1)} seconds
     `.trim();
@@ -161,68 +161,84 @@ Processing Time: ${(results.processingTime / 1000).toFixed(1)} seconds
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {/* Your Content Score */}
             <div className="text-center">
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Your Content</h3>
-              <div className="relative group">
-                <div className="absolute inset-0 gradient-bg rounded-full blur-xl opacity-30 group-hover:opacity-50 transition-opacity" />
-                <div className="relative w-32 h-32 mx-auto">
-                  <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-200" />
-                    <circle cx="18" cy="18" r="16" fill="none" stroke="url(#gradientMain)" strokeWidth="2" strokeDasharray={`${results.mainCopyScore}, 100`} className="transition-all duration-1000 ease-out" />
-                    <defs>
-                      <linearGradient id="gradientMain">
-                        <stop offset="0%" stopColor="var(--gradient-start)" />
-                        <stop offset="100%" stopColor="var(--gradient-end)" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <span className="text-3xl font-bold gradient-text">{results.mainCopyScore}%</span>
-                      <span className="block text-xs text-gray-500 mt-1">Match</span>
-                    </div>
+              <h3 className="text-sm font-medium text-gray-600 mb-3">Your Content</h3>
+              <div className="relative w-32 h-32 mx-auto">
+                <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 36 36">
+                  <circle 
+                    cx="18" 
+                    cy="18" 
+                    r="16" 
+                    fill="none" 
+                    stroke="#e5e7eb" 
+                    strokeWidth="2" 
+                  />
+                  <circle 
+                    cx="18" 
+                    cy="18" 
+                    r="16" 
+                    fill="none" 
+                    stroke="#8b5cf6" 
+                    strokeWidth="2" 
+                    strokeDasharray={`${results.mainCopyScore}, 100`} 
+                    className="transition-all duration-1000 ease-out" 
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <span className="text-3xl font-bold text-gray-900">{results.mainCopyScore}%</span>
+                    <span className="block text-xs text-gray-500 mt-1">Match</span>
                   </div>
                 </div>
-                {isMainWinner && (
-                  <div className="absolute -top-2 -right-2 animate-bounce">
-                    <div className="gradient-bg p-2 rounded-full shadow-lg">
-                      <Trophy className="h-4 w-4 text-white" />
-                    </div>
-                  </div>
-                )}
               </div>
+              {isMainWinner && (
+                <div className="mt-2">
+                  <Badge className="bg-green-100 text-green-800">
+                    <Trophy className="h-3 w-3 mr-1" />
+                    Winner
+                  </Badge>
+                </div>
+              )}
             </div>
 
             {/* Competitor Content Score */}
             <div className="text-center">
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Competitor Content</h3>
-              <div className="relative group">
-                <div className="absolute inset-0 gradient-bg rounded-full blur-xl opacity-30 group-hover:opacity-50 transition-opacity" />
-                <div className="relative w-32 h-32 mx-auto">
-                  <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-200" />
-                    <circle cx="18" cy="18" r="16" fill="none" stroke="url(#gradientComp)" strokeWidth="2" strokeDasharray={`${results.competitorCopyScore}, 100`} className="transition-all duration-1000 ease-out" />
-                    <defs>
-                      <linearGradient id="gradientComp">
-                        <stop offset="0%" stopColor="var(--gradient-start)" />
-                        <stop offset="100%" stopColor="var(--gradient-end)" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <span className="text-3xl font-bold gradient-text">{results.competitorCopyScore}%</span>
-                      <span className="block text-xs text-gray-500 mt-1">Match</span>
-                    </div>
+              <h3 className="text-sm font-medium text-gray-600 mb-3">Competitor Content</h3>
+              <div className="relative w-32 h-32 mx-auto">
+                <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 36 36">
+                  <circle 
+                    cx="18" 
+                    cy="18" 
+                    r="16" 
+                    fill="none" 
+                    stroke="#e5e7eb" 
+                    strokeWidth="2" 
+                  />
+                  <circle 
+                    cx="18" 
+                    cy="18" 
+                    r="16" 
+                    fill="none" 
+                    stroke="#8b5cf6" 
+                    strokeWidth="2" 
+                    strokeDasharray={`${results.competitorCopyScore}, 100`} 
+                    className="transition-all duration-1000 ease-out" 
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <span className="text-3xl font-bold text-gray-900">{results.competitorCopyScore}%</span>
+                    <span className="block text-xs text-gray-500 mt-1">Match</span>
                   </div>
                 </div>
-                {!isMainWinner && (
-                  <div className="absolute -top-2 -right-2 animate-bounce">
-                    <div className="gradient-bg p-2 rounded-full shadow-lg">
-                      <Trophy className="h-4 w-4 text-white" />
-                    </div>
-                  </div>
-                )}
               </div>
+              {!isMainWinner && (
+                <div className="mt-2">
+                  <Badge className="bg-green-100 text-green-800">
+                    <Trophy className="h-3 w-3 mr-1" />
+                    Winner
+                  </Badge>
+                </div>
+              )}
             </div>
           </div>
 
@@ -268,7 +284,7 @@ Processing Time: ${(results.processingTime / 1000).toFixed(1)} seconds
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg">
                 <h4 className="text-sm font-medium text-center mb-3">Analysis Process</h4>
                 <div className="flex items-center justify-center gap-2 text-sm flex-wrap">
-                  <Badge className="bg-white">{results.keywordWeights.length} Keywords</Badge>
+                  <Badge className="bg-white">{results.keywordWeights.length} Topics</Badge>
                   <span className="text-gray-500">→</span>
                   <Badge className="bg-white">AI Embeddings</Badge>
                   <span className="text-gray-500">→</span>
@@ -284,17 +300,18 @@ Processing Time: ${(results.processingTime / 1000).toFixed(1)} seconds
               <div className="space-y-4">
                 {/* Step 1: Keywords */}
                 <div className="border-l-4 border-blue-500 pl-4">
-                  <h4 className="font-medium mb-2">1. Your Target Keywords (weighted):</h4>
+                  <h4 className="font-medium mb-2">1. Your Topic Priorities:</h4>
                   <div className="flex flex-wrap gap-2">
                     {results.keywordWeights.map((kw) => (
-                      <Badge key={kw.text} variant="outline">
+                      <Badge key={kw.text} variant={kw.weight > 1 ? "default" : "outline"}>
+                        {kw.weight > 1 && "🎯 "}
                         {kw.text}
-                        {kw.weight !== 1 && <span className="ml-1 font-bold">×{kw.weight}</span>}
+                        {kw.weight > 1 && " (Main Topic)"}
                       </Badge>
                     ))}
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Higher weights mean more importance in the calculation
+                    Your main topic gets priority in the analysis scoring
                   </p>
                 </div>
 
@@ -352,16 +369,16 @@ Processing Time: ${(results.processingTime / 1000).toFixed(1)} seconds
                   <h4 className="font-medium mb-2">4. Final Score Calculation:</h4>
                   <div className="bg-orange-50 p-3 rounded text-sm">
                     <p>
-                      Your content's embeddings are {results.mainCopyScore}% similar to the weighted keyword centroid. This measures how well your content semantically aligns with your target keywords.
+                      Your content covers {results.mainCopyScore}% of your target topics well. This measures how well your content aligns with your topic priorities.
                     </p>
                     <p className="mt-2 font-medium">
                       {results.mainCopyScore >= 80
-                        ? "Excellent"
+                        ? "Excellent coverage!"
                         : results.mainCopyScore >= 60
-                        ? "Good"
+                        ? "Good coverage!"
                         : results.mainCopyScore >= 40
                         ? "Needs Improvement"
-                        : "Poor"} alignment!
+                        : "Poor coverage"} 
                     </p>
                   </div>
                 </div>
@@ -462,17 +479,17 @@ Processing Time: ${(results.processingTime / 1000).toFixed(1)} seconds
               </>
             )}
 
-            {/* Keyword coverage analysis */}
+            {/* Topic coverage analysis */}
             <div className="border-l-4 border-primary bg-primary/5 p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
                   <TrendingUp className="h-5 w-5 text-primary" />
                 </div>
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-primary">Keyword Coverage Analysis</h3>
+                  <h3 className="text-sm font-medium text-primary">Topic Coverage Analysis</h3>
                   <div className="mt-2 text-sm text-primary/80">
                     <p>
-                      High-weight keywords show strong semantic alignment. Consider balancing coverage across all target keywords for optimal performance.
+                      Your main topic shows strong coverage. Consider balancing discussion across all your topics for optimal performance.
                     </p>
                   </div>
                 </div>

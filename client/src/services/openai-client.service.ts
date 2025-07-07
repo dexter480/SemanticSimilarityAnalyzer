@@ -16,8 +16,16 @@ export class OpenAIClientService {
       throw new Error('Invalid API key format');
     }
     
+    // Use an absolute base URL that includes /v1 so the OpenAI SDK constructs valid request URLs
+    // The Vite dev proxy rewrites the "/openai" prefix to "https://api.openai.com", so keeping the
+    // "/v1" segment ensures requests map to the correct OpenAI REST path (e.g. /v1/embeddings).
+    const baseURL = typeof window !== 'undefined'
+      ? `${window.location.origin}/openai/v1`
+      : 'http://localhost:3000/openai/v1';
+
     this.openai = new OpenAI({
       apiKey,
+      baseURL,
       dangerouslyAllowBrowser: true // Required for client-side usage
     });
   }

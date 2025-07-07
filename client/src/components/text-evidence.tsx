@@ -68,7 +68,7 @@ export function TextEvidence({ keyword, userText, competitorText, chunks }: Text
           <h4 className="font-medium flex items-center gap-2">
             {keyword.keyword}
             <Badge variant="outline" className="text-xs">
-              Weight: {keyword.weight}
+                                      Role: {keyword.weight > 1 ? 'Main Topic' : 'Supporting Topic'}
             </Badge>
           </h4>
           <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">

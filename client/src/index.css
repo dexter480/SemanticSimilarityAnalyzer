@@ -9,25 +9,13 @@
   --muted-foreground: hsl(215, 16%, 46%);
   --primary: hsl(262, 83%, 58%);
   --primary-foreground: hsl(0, 0%, 100%);
-  --secondary: hsl(293, 69%, 49%);
-  --secondary-foreground: hsl(0, 0%, 100%);
-  --accent: hsl(262, 83%, 58%);
-  --accent-foreground: hsl(0, 0%, 100%);
-
-  /* Gradient palette */
-  --gradient-start: hsl(262, 83%, 58%);
-  --gradient-end: hsl(293, 69%, 49%);
-
-  /* Preserve existing tokens that are still referenced elsewhere */
-  --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(222, 47%, 11%);
   --card: hsl(0, 0%, 100%);
   --card-foreground: hsl(222, 47%, 11%);
-  --border: hsl(210, 40%, 96%);
-  --input: hsl(210, 40%, 96%);
+  --border: hsl(214, 32%, 91%);
+  --input: hsl(214, 32%, 91%);
   --destructive: hsl(0, 84.2%, 60.2%);
-  --destructive-foreground: hsl(60, 9.1%, 97.8%);
-  --ring: hsl(222, 47%, 11%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(262, 83%, 58%);
   --radius: 0.5rem;
 }
 
@@ -36,22 +24,15 @@
   --foreground: hsl(0, 0%, 98%);
   --muted: hsl(240, 3.7%, 15.9%);
   --muted-foreground: hsl(240, 5%, 64.9%);
-  --popover: hsl(240, 10%, 3.9%);
-  --popover-foreground: hsl(0, 0%, 98%);
   --card: hsl(240, 10%, 3.9%);
   --card-foreground: hsl(0, 0%, 98%);
   --border: hsl(240, 3.7%, 15.9%);
   --input: hsl(240, 3.7%, 15.9%);
-  --primary: hsl(207, 90%, 54%);
-  --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(240, 3.7%, 15.9%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(240, 3.7%, 15.9%);
-  --accent-foreground: hsl(0, 0%, 98%);
+  --primary: hsl(262, 83%, 58%);
+  --primary-foreground: hsl(0, 0%, 100%);
   --destructive: hsl(0, 62.8%, 30.6%);
   --destructive-foreground: hsl(0, 0%, 98%);
-  --ring: hsl(240, 4.9%, 83.9%);
-  --radius: 0.5rem;
+  --ring: hsl(262, 83%, 58%);
 }
 
 @layer base {
@@ -64,55 +45,38 @@
   }
 }
 
-/* -------------------------------------------------- */
-/*  Gradient & glass utilities                         */
-/* -------------------------------------------------- */
-.gradient-bg {
-  background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+/* Simple focus states */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
 }
 
-.gradient-text {
-  background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-          background-clip: text;
+/* Clean transitions */
+.transition-base {
+  @apply transition-colors duration-200;
 }
 
-.glass-effect {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+/* Ensure Select component dropdowns are properly positioned and clickable */
+[data-radix-select-content] {
+  z-index: 9999 !important;
+  position: relative;
 }
 
-/* -------------------------------------------------- */
-/*  Micro-interaction helpers                          */
-/* -------------------------------------------------- */
-.button-gradient {
-  @apply relative overflow-hidden transition-all duration-300;
-  background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
-}
-.button-gradient::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  transition: left 0.5s;
-}
-.button-gradient:hover::before {
-  left: 100%;
+[data-radix-select-item] {
+  cursor: pointer !important;
+  user-select: none;
 }
 
-.input-glow:focus {
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1), 0 0 20px rgba(139, 92, 246, 0.2);
-  border-color: var(--gradient-start);
+[data-radix-select-item]:hover {
+  background-color: hsl(var(--accent)) !important;
 }
 
-.card-hover {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* Prevent any interference with dropdown positioning */
+.select-container {
+  position: relative;
+  z-index: 10;
 }
-.card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(139, 92, 246, 0.15);
+
+/* Ensure portal elements are above everything */
+[data-radix-portal] {
+  z-index: 9999 !important;
 }

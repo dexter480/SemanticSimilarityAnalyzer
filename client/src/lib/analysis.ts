@@ -1,4 +1,4 @@
-import { type Keyword, type KeywordCoverage } from "@shared/schema";
+import { type Keyword, type KeywordCoverage, type KeywordRole } from "@shared/schema";
 import { detectSections, type TextSection } from "./text-analysis";
 
 export function parseKeywords(input: string): Keyword[] {
@@ -11,7 +11,7 @@ export function parseKeywords(input: string): Keyword[] {
     const trimmed = line.trim();
     if (!trimmed) continue;
 
-    // Check for weighted format (keyword:weight)
+    // Check for weighted format (keyword:weight) - for backward compatibility
     const match = trimmed.match(/^(.+?):(\d*\.?\d+)$/);
     
     if (match) {
@@ -19,14 +19,16 @@ export function parseKeywords(input: string): Keyword[] {
       const weight = parseFloat(match[2]);
       
       if (text && weight >= 0.1 && weight <= 10) {
-        keywords.push({ text, weight });
+        // Convert weight to role for new system
+        const role: KeywordRole = weight > 1 ? 'main' : 'supporting';
+        keywords.push({ text, role, weight });
       } else if (text) {
         // Invalid weight, use default
-        keywords.push({ text, weight: 1 });
+        keywords.push({ text, role: 'supporting' as KeywordRole, weight: 1 });
       }
     } else {
-      // Simple format
-      keywords.push({ text: trimmed, weight: 1 });
+      // Simple format - default to supporting role
+      keywords.push({ text: trimmed, role: 'supporting' as KeywordRole, weight: 1 });
     }
   }
 

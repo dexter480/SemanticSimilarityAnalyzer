@@ -15,10 +15,10 @@ export function SecurityHeaders() {
     cspMeta.content = `
       default-src 'self';
       script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com;
-      style-src 'self' 'unsafe-inline';
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       img-src 'self' data: https:;
       connect-src 'self' https://api.openai.com;
-      font-src 'self' https://fonts.gstatic.com;
+      font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com;
       frame-ancestors 'none';
       base-uri 'self';
       form-action 'self';

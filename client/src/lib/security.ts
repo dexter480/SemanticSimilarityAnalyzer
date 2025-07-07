@@ -80,14 +80,14 @@ export class ClientRateLimiter {
 // Create global rate limiter instance
 export const rateLimiter = new ClientRateLimiter();
 
-// Secure storage wrapper (session only)
-export class SecureSessionStorage {
-  private static encrypt(text: string): string {
-    // Simple obfuscation for session storage (not true encryption)
+// Session storage wrapper with basic obfuscation
+export class ObfuscatedStorage {
+  private static encode(text: string): string {
+    // Basic obfuscation for session storage
     return btoa(encodeURIComponent(text));
   }
 
-  private static decrypt(text: string): string {
+  private static decode(text: string): string {
     try {
       return decodeURIComponent(atob(text));
     } catch {
@@ -96,12 +96,12 @@ export class SecureSessionStorage {
   }
 
   static setItem(key: string, value: string): void {
-    sessionStorage.setItem(key, this.encrypt(value));
+    sessionStorage.setItem(key, this.encode(value));
   }
 
   static getItem(key: string): string | null {
-    const encrypted = sessionStorage.getItem(key);
-    return encrypted ? this.decrypt(encrypted) : null;
+    const encoded = sessionStorage.getItem(key);
+    return encoded ? this.decode(encoded) : null;
   }
 
   static removeItem(key: string): void {

@@ -33,10 +33,12 @@ export function ApiKeyWarning() {
           <div className="text-sm text-orange-700">
             <strong>Best Practices:</strong>
             <ul className="list-disc list-inside mt-1 space-y-1">
-              <li>Use API keys with limited permissions when possible</li>
-              <li>Set usage limits in your OpenAI account</li>
+              <li>Create a restricted API key with only 'Model: Read' permissions for safety</li>
+              <li>Use API keys with limited budgets when possible</li>
+              <li>Set usage limits in your OpenAI account dashboard</li>
               <li>Monitor your API usage regularly</li>
               <li>Never share your API key with others</li>
+              <li>Regenerate your key if you suspect it's been compromised</li>
             </ul>
           </div>
         </div>

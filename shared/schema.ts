@@ -1,7 +1,11 @@
 import { z } from "zod";
 
+// Add semantic role support
+export type KeywordRole = 'main' | 'supporting';
+
 export const keywordSchema = z.object({
   text: z.string().min(1),
+  role: z.enum(['main', 'supporting']).default('supporting'),
   weight: z.number().min(0.1).max(10).default(1)
 });
 

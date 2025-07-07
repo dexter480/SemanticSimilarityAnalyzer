@@ -3,8 +3,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { analysisRequestSchema, type AnalysisRequest, type AnalysisResult, type Keyword } from "@shared/schema";
 import { openAIClient } from "@/services/openai-client.service";
-import { validateApiKey, rateLimiter, SecureSessionStorage } from "@/lib/security";
+import { validateApiKey, rateLimiter, ObfuscatedStorage } from "@/lib/security";
 import { ApiKeyWarning } from "@/components/api-key-warning";
+import { KeywordInput } from "@/components/keyword-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,11 +34,12 @@ export function AnalysisForm({ onAnalysisComplete, isAnalyzing, setIsAnalyzing }
   const [rateLimitError, setRateLimitError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const form = useForm<AnalysisRequest>({
+  const form = useForm<AnalysisRequest & { keywordsRaw: string }>({
     resolver: zodResolver(analysisRequestSchema),
     defaultValues: {
       apiKey: "",
       keywords: [],
+      keywordsRaw: "", // Add this
       mainCopy: "",
       competitorCopy: "",
       analysisMode: "full"
@@ -70,7 +72,7 @@ export function AnalysisForm({ onAnalysisComplete, isAnalyzing, setIsAnalyzing }
       openAIClient.initialize(data.apiKey);
       
       // Store API key in secure session storage (optional)
-      SecureSessionStorage.setItem('temp_api_key', data.apiKey);
+      ObfuscatedStorage.setItem('temp_api_key', data.apiKey);
       
       // Perform analysis
       const results = await openAIClient.analyze({
@@ -97,11 +99,7 @@ export function AnalysisForm({ onAnalysisComplete, isAnalyzing, setIsAnalyzing }
     }
   };
 
-  const handleKeywordsChange = (value: string) => {
-    const keywords = parseKeywords(value);
-    setParsedKeywords(keywords);
-    form.setValue("keywords", keywords);
-  };
+
 
   const handleMainCopyChange = (value: string) => {
     setMainCopyWordCount(countWords(value));
@@ -116,7 +114,7 @@ export function AnalysisForm({ onAnalysisComplete, isAnalyzing, setIsAnalyzing }
   // Clear session on unmount
   useEffect(() => {
     return () => {
-      SecureSessionStorage.removeItem('temp_api_key');
+      ObfuscatedStorage.removeItem('temp_api_key');
       openAIClient.destroy();
     };
   }, []);
@@ -126,16 +124,14 @@ export function AnalysisForm({ onAnalysisComplete, isAnalyzing, setIsAnalyzing }
       <ApiKeyWarning />
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
         {/* API Key Section */}
-        <Card className="relative overflow-hidden border-0 shadow-lg card-hover">
-          <div className="absolute inset-0 gradient-bg opacity-5 pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-pink-500/10 pointer-events-none" />
-          <CardHeader>
+        <Card className="bg-white rounded-lg border border-gray-200 shadow-sm">
+          <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle>API Configuration</CardTitle>
-              <div className="flex items-center text-sm text-muted-foreground glass-effect px-3 py-1 rounded-full">
-                <Shield className="h-4 w-4 mr-1" />
+              <CardTitle className="text-lg font-semibold">API Configuration</CardTitle>
+              <Badge variant="secondary" className="text-xs">
+                <Shield className="h-3 w-3 mr-1" />
                 Secure Session
-              </div>
+              </Badge>
             </div>
           </CardHeader>
           <CardContent>
@@ -190,86 +186,27 @@ export function AnalysisForm({ onAnalysisComplete, isAnalyzing, setIsAnalyzing }
         {/* Input Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Keywords Input */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Target Keywords</CardTitle>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <HelpCircle className="h-4 w-4 mr-1" />
-                      Help
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Keyword Format Help</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="font-medium">Simple Format:</h4>
-                        <p className="text-sm text-muted-foreground">SEO, content marketing, digital strategy</p>
-                      </div>
-                      <div>
-                        <h4 className="font-medium">Weighted Format:</h4>
-                        <p className="text-sm text-muted-foreground">SEO:3, content marketing:2, digital strategy:1</p>
-                      </div>
-                      <div>
-                        <h4 className="font-medium">Rules:</h4>
-                        <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                          <li>Separate keywords with commas or new lines</li>
-                          <li>Default weight is 1.0 if not specified</li>
-                          <li>Weights can be 0.1 to 10.0</li>
-                          <li>Maximum 50 keywords allowed</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
+          <Card className="bg-white rounded-lg border border-gray-200 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold">Target Keywords</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <Textarea
-                    placeholder="Enter keywords separated by commas or new lines&#10;&#10;Examples:&#10;Simple: SEO, content marketing, digital strategy&#10;Weighted: SEO:3, content marketing:2, digital strategy:1"
-                    rows={6}
-                    onChange={(e) => handleKeywordsChange(e.target.value)}
-                    className="resize-none"
-                  />
-                  <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-                    <span>{parsedKeywords.length} keywords parsed</span>
-                    <span>Max: 50 keywords</span>
-                  </div>
-                </div>
-
-                {parsedKeywords.length > 0 && (
-                  <div className="border-t pt-4">
-                    <h4 className="text-sm font-medium text-foreground mb-2">Parsed Keywords:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {parsedKeywords.map((keyword, index) => (
-                        <Badge 
-                          key={index} 
-                          variant={keyword.weight > 1 ? "default" : "secondary"}
-                          className="text-xs"
-                        >
-                          {keyword.text}
-                          {keyword.weight !== 1 && (
-                            <span className="ml-1 font-semibold">×{keyword.weight}</span>
-                          )}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+              <KeywordInput
+                value={form.watch("keywordsRaw") || ""}
+                onChange={(value) => form.setValue("keywordsRaw", value)}
+                keywords={parsedKeywords}
+                onKeywordsChange={(keywords) => {
+                  setParsedKeywords(keywords);
+                  form.setValue("keywords", keywords);
+                }}
+              />
             </CardContent>
           </Card>
 
           {/* Analysis Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Analysis Settings</CardTitle>
+          <Card className="bg-white rounded-lg border border-gray-200 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold">Analysis Settings</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -320,9 +257,9 @@ export function AnalysisForm({ onAnalysisComplete, isAnalyzing, setIsAnalyzing }
         {/* Content Input Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Main Copy */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Content</CardTitle>
+          <Card className="bg-white rounded-lg border border-gray-200 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold">Your Content</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -344,9 +281,9 @@ export function AnalysisForm({ onAnalysisComplete, isAnalyzing, setIsAnalyzing }
           </Card>
 
           {/* Competitor Copy */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Competitor Content</CardTitle>
+          <Card className="bg-white rounded-lg border border-gray-200 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold">Competitor Content</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -373,7 +310,7 @@ export function AnalysisForm({ onAnalysisComplete, isAnalyzing, setIsAnalyzing }
           <Button
             type="submit"
             size="lg"
-            disabled={isAnalyzing || parsedKeywords.length === 0}
+                        disabled={isAnalyzing || parsedKeywords.length === 0}
             className="px-8 py-3 text-base shadow-lg"
           >
             <Brain className="h-5 w-5 mr-2" />

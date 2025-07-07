@@ -44,38 +44,36 @@ export default function AnalysisPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Enhanced Header */}
-      <header className="relative overflow-hidden border-b bg-white/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-100/20 to-pink-100/20" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-5">
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <div className="w-12 h-12 gradient-bg rounded-2xl flex items-center justify-center transform rotate-3 transition-transform hover:rotate-6">
-                  <Search className="text-white h-6 w-6 transform -rotate-3" />
-                </div>
-                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse" />
+      {/* Clean Header */}
+      <header className="bg-white border-b sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                <Search className="text-white h-5 w-5" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">
-                  <span className="gradient-text">Semantic AI</span>
+                <h1 className="text-xl font-semibold text-gray-900">
+                  Semantic Similarity Analyzer
                 </h1>
-                <p className="text-sm text-gray-600">Content Intelligence Platform</p>
+                <p className="text-sm text-gray-500">AI-powered content analysis</p>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              <Badge className="glass-effect border-purple-200">
-                <Sparkles className="h-3 w-3 mr-1" /> Powered by GPT-3
+              <Badge variant="secondary" className="text-xs">
+                Powered by OpenAI
               </Badge>
-              <Button
-                variant="outline"
-                onClick={handleReset}
-                className="hover:border-purple-300 transition-all"
-              >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                New Analysis
-              </Button>
+              {results && (
+                <Button
+                  variant="outline"
+                  onClick={handleReset}
+                  size="sm"
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  New Analysis
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -136,8 +134,9 @@ export default function AnalysisPage() {
           
           <div className="mt-6 pt-6 border-t border-gray-200">
             <p className="text-center text-xs text-gray-400">
-              © {new Date().getFullYear()} Semantic Similarity Tool. 
+              © {new Date().getFullYear()} Semantic Similarity Tool - A free community tool. 
               Not affiliated with OpenAI. You are responsible for your API usage and costs.
+              By using this tool, you agree to our Terms of Service and Privacy Policy.
             </p>
           </div>
         </div>
@@ -145,31 +144,23 @@ export default function AnalysisPage() {
 
       {/* Loading Overlay */}
       {isAnalyzing && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-sm w-full mx-4">
-            <div className="relative w-24 h-24 mx-auto mb-4">
-              <div className="absolute inset-0 gradient-bg rounded-full animate-ping opacity-20" />
-              <div className="absolute inset-0 gradient-bg rounded-full animate-pulse opacity-40" />
-              <div className="relative gradient-bg rounded-full w-full h-full flex items-center justify-center">
-                <Brain className="h-10 w-10 text-white animate-pulse" />
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-8 shadow-xl max-w-sm w-full mx-4">
+            <div className="flex flex-col items-center">
+              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mb-4">
+                <Brain className="h-8 w-8 text-white animate-pulse" />
               </div>
-            </div>
-            <h3 className="text-lg font-semibold text-center mb-2">Analyzing Content</h3>
-            <p className="text-sm text-gray-600 text-center">Creating embeddings and calculating semantic similarity...</p>
-            <div className="mt-4 space-y-2">
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <div className="w-2 h-2 gradient-bg rounded-full animate-pulse" /> Processing keywords
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <div className="w-2 h-2 gradient-bg rounded-full animate-pulse animation-delay-150" /> Generating embeddings
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <div className="w-2 h-2 gradient-bg rounded-full animate-pulse animation-delay-300" /> Calculating similarity
+              <h3 className="text-lg font-semibold text-center mb-2">Analyzing Content</h3>
+              <p className="text-sm text-gray-600 text-center">This may take a few moments...</p>
+              <div className="mt-6 w-full">
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
+                </div>
               </div>
             </div>
           </div>
         </div>
-              )}
+      )}
 
       <TermsOfService open={showTerms} onClose={() => setShowTerms(false)} />
       <PrivacyPolicy open={showPrivacy} onClose={() => setShowPrivacy(false)} />
