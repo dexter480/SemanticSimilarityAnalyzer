@@ -138,6 +138,9 @@ export default function AnalysisPage() {
               Not affiliated with OpenAI. You are responsible for your API usage and costs.
               By using this tool, you agree to our Terms of Service and Privacy Policy.
             </p>
+            <p className="text-center text-xs text-gray-400 mt-2">
+              Built by <a href="https://vesivanov.com/" target="_blank" rel="noopener" className="text-gray-600 hover:text-gray-900 underline">Ves Ivanov</a>
+            </p>
           </div>
         </div>
       </footer>
